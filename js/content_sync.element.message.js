@@ -14,7 +14,7 @@
    */
   Drupal.behaviors.content_syncMessageClose = {
     attach: function (context) {
-      $(context).find('.js-content_sync-message--close').once('content_sync-message--close').each(function () {
+      $(once('content_sync-message--close', '.js-content_sync-message--close', context)).each(function () {
         var $element = $(this);
 
         var id = $element.attr('data-message-id');

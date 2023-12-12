@@ -10,7 +10,8 @@ content_sync.help:
   dependencies:
     - core/drupal
     - core/jquery
-    - core/jquery.once
+    - core/once
+    - core/jquery.ui.accordion
 
 content_sync.element.message:
   version: VERSION
@@ -22,4 +23,4 @@ content_sync.element.message:
   dependencies:
     - core/drupal
     - core/jquery
-    - core/jquery.once
+    - core/once

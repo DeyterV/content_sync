@@ -15,6 +15,7 @@ use Drupal\Core\Diff\DiffFormatter;
 use Drupal\Core\Url;
 //use Symfony\Component\HttpFoundation\Request;
 use Drupal\Core\File\FileSystemInterface;
+use Symfony\Component\Mime\Header\UnstructuredHeader;
 
 
 /**
@@ -98,11 +99,11 @@ class ContentController implements ContainerInjectionInterface {
     $file_path = $this->fileSystem->getTempDirectory() . '/' . $filename;
     if (file_exists($file_path) ) {
       unset($_SESSION['content_tar_download_file']);
-      $mime = \Drupal::service('file.mime_type.guesser')->guess($file_path);
+      $mime = \Drupal::service('file.mime_type.guesser')->guessMimeType($file_path);
       $headers = array(
-        'Content-Type' => $mime . '; name="' . Unicode::mimeHeaderEncode(basename($file_path)) . '"',
+        'Content-Type' => $mime . '; name="' . (new UnstructuredHeader('Content-Type', basename($file_path)))->getBodyAsString() . '"',
         'Content-Length' => filesize($file_path),
-        'Content-Disposition' => 'attachment; filename="' . Unicode::mimeHeaderEncode($filename) . '"',
+        'Content-Disposition' => 'attachment; filename="' . (new UnstructuredHeader('Content-Disposition', basename($filename)))->getBodyAsString() . '"',
         'Cache-Control' => 'private',
       );
       return new BinaryFileResponse($file_path, 200, $headers);

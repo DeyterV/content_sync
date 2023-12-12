@@ -86,6 +86,7 @@ class ContentExportForm extends FormBase {
       if ($reflection->implementsInterface(ContentEntityInterface::class)) {
         $entities = $this->entityTypeManager->getStorage($entity_type)
                                             ->getQuery()
+                                            ->accessCheck(FALSE)
                                             ->execute();
         foreach ($entities as $entity_id) {
           $entities_list[] = [
@@ -112,6 +113,7 @@ class ContentExportForm extends FormBase {
       if ($reflection->implementsInterface(ContentEntityInterface::class)) {
         $entities = $this->entityTypeManager->getStorage($entity_type)
                                             ->getQuery()
+                                            ->accessCheck(FALSE)
                                             ->execute();
         foreach ($entities as $entity_id) {
           $entities_list[] = [

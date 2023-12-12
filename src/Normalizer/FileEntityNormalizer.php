@@ -7,7 +7,11 @@ use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\EntityTypeRepositoryInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Component\Render\FormattableMarkup;
+use Drupal\Core\File\FileUrlGeneratorInterface;
+use phpDocumentor\Reflection\Types\Mixed_;
 
 /**
  * Adds the file URI to embedded file entities.
@@ -29,6 +33,13 @@ class FileEntityNormalizer extends ContentEntityNormalizer {
   protected $fileSystem;
 
   /**
+   * The file URL generator.
+   *
+   * @var \Drupal\Core\File\FileUrlGeneratorInterface
+   */
+  protected $fileUrlGenerator;
+
+  /**
    * FileEntityNormalizer constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -41,24 +52,20 @@ class FileEntityNormalizer extends ContentEntityNormalizer {
    * @param \Drupal\content_sync\Plugin\SyncNormalizerDecoratorManager $decorator_manager
    *
    * @param \Drupal\Core\File\FileSystemInterface $file_system
+   *   File system service.
+   * @param \Drupal\Core\File\FileUrlGeneratorInterface $file_url_generator
+   *   The file URL generator.
    */
-  public function __construct(
-      EntityTypeManagerInterface $entity_type_manager,
-      EntityTypeRepositoryInterface $entity_type_repository,
-      EntityFieldManagerInterface $entity_field_manager,
-      SyncNormalizerDecoratorManager $decorator_manager,
-      FileSystemInterface $file_system) {
-    parent::__construct($entity_type_manager,
-                        $entity_type_repository,
-                        $entity_field_manager,
-                        $decorator_manager);
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, EntityTypeRepositoryInterface $entity_type_repository, EntityFieldManagerInterface $entity_field_manager, EntityTypeBundleInfoInterface $entity_type_bundle_info, EntityRepositoryInterface $entity_repository, SyncNormalizerDecoratorManager $decorator_manager, FileSystemInterface $file_system, FileUrlGeneratorInterface $file_url_generator) {
+    parent::__construct($entity_type_manager, $entity_type_repository, $entity_field_manager, $entity_type_bundle_info, $entity_repository, $decorator_manager);
     $this->fileSystem = $file_system;
+    $this->fileUrlGenerator = $file_url_generator;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function denormalize($data, $class, $format = NULL, array $serializer_context = array()) {
+  public function denormalize($data, $class, $format = NULL, array $serializer_context = array()): mixed {
 
     $file_data = '';
 
@@ -84,7 +91,7 @@ class FileEntityNormalizer extends ContentEntityNormalizer {
             $data['uri'] = [
               [
                 'value' => $uri,
-                'url' => str_replace($GLOBALS['base_url'], '', file_create_url($uri))
+                'url' => str_replace($GLOBALS['base_url'], '', $this->fileUrlGenerator->generateAbsoluteString($uri))
               ]
             ];
 
@@ -131,7 +138,7 @@ class FileEntityNormalizer extends ContentEntityNormalizer {
   /**
    * {@inheritdoc}
    */
-  public function normalize($object, $format = NULL, array $serializer_context = array()) {
+  public function normalize($object, $format = NULL, array $serializer_context = array()): array|string|int|float|bool|\ArrayObject|NULL {
     $data = parent::normalize($object, $format, $serializer_context);
 
     // The image will be saved in the export directory.
@@ -140,13 +147,8 @@ class FileEntityNormalizer extends ContentEntityNormalizer {
       $scheme = \Drupal::service('stream_wrapper_manager')->getScheme($uri);
       $destination = "{$serializer_context['content_sync_directory_files']}/{$scheme}/";
       $destination = str_replace($scheme . '://', $destination, $uri);
-      $prep_dir = $this->fileSystem->dirname($destination);
-      $this->fileSystem->prepareDirectory($prep_dir, FileSystemInterface::CREATE_DIRECTORY);
-      // Exception for when the file doesn't exist
-      // TODO: add a notice/log about it.
-      if (file_exists($uri)) {
-        $this->fileSystem->copy($uri, $destination, FileSystemInterface::EXISTS_REPLACE);
-      }
+      $this->fileSystem->prepareDirectory($this->fileSystem->dirname($destination), FileSystemInterface::CREATE_DIRECTORY);
+      $this->fileSystem->copy($uri, $destination, FileSystemInterface::EXISTS_REPLACE);
     }
 
     // Set base64-encoded file contents to the "data" property.

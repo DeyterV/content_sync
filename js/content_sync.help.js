@@ -3,7 +3,7 @@
  * JavaScript behaviors for help.
  */
 
-(function ($, Drupal) {
+(function ($, Drupal, once) {
 
   'use strict';
 
@@ -17,7 +17,7 @@
    */
   Drupal.behaviors.content_syncHelpDialog = {
     attach: function (context) {
-      $(context).find('.button-content_sync-play').once('content_sync-help-dialog').on('click', function (event) {
+      $(once('content_sync-help-dialog', '.button-content_sync-play', context)).on('click', function (event) {
         if ($(window).width() < 768) {
           event.stopImmediatePropagation();
         }
@@ -33,4 +33,4 @@
     }
   };
 
-})(jQuery, Drupal);
+})(jQuery, Drupal, once);
